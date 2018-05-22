@@ -2,7 +2,8 @@ import networkx as nx
 import operator
 from random import choice
 import matplotlib.pyplot as plt
-from nrmsd import nrmsd
+from nrmsd import nrmsd, dinrmsd
+import math
 
 C = 3
 
@@ -16,7 +17,7 @@ def readgraph(infile):
             l = f.readline()
     return G
 
-def combine_length(length_o, length_i, embedding, the_node, r):
+def combine_length(length_o, length_i, embedding, the_node, r, alg='L1'):
     nodes = list(embedding.keys())
     length = {}
     for node in nodes:
@@ -30,14 +31,47 @@ def combine_length(length_o, length_i, embedding, the_node, r):
         else:
             print("Not a strongly connected graph.")
             exit
-        length[node] = float(li + lo)/2
+        if alg == 'L1':
+            length[node] = float(li + lo)/2
+        elif alg == 'L2':
+            length[node] = (float(li + lo)/2)**2
         i = 0
         while i < r:
-            length[node] -= abs(embedding[node][i]-embedding[the_node][i])
+            if alg == 'L1':
+                length[node] -= abs(embedding[node][i]-embedding[the_node][i])
+            elif alg == 'L2':
+                length[node] -= (embedding[node][i]-embedding[the_node][i])**2
             i = i+1
     return length
 
-def difastmap(G, K, epsilon):
+def diff_length(length_o, length_i, embedding, the_node, r, alg='L1'):
+    nodes = list(embedding.keys())
+    length = {}
+    for node in nodes:
+        if node in length_o:
+            lo = length_o[node]
+        else:
+            print("Not a strongly connected graph.")
+            exit
+        if node in length_i:
+            li = length_i[node]
+        else:
+            print("Not a strongly connected graph.")
+            exit
+        if alg == 'L1':
+            length[node] = abs(float(li - lo)/2)
+        elif alg == 'L2':
+            length[node] = (float(li - lo)/2)**2
+        i = 0
+        while i < r:
+            if alg == 'L1':
+                length[node] -= abs(embedding[node][i]-embedding[the_node][i])
+            elif alg == 'L2':
+                length[node] -= (embedding[node][i]-embedding[the_node][i])**2
+            i = i+1
+    return length
+
+def difastmap_combine(G, K, epsilon):
     NG = G.copy()
     RG = nx.reverse(NG)
     embedding = {}
@@ -75,16 +109,132 @@ def difastmap(G, K, epsilon):
             embedding[node].append(p_ir)
     return embedding
 
+def difastmap_diff(G, K, epsilon):
+    NG = G.copy()
+    RG = nx.reverse(NG)
+    embedding = {}
+    # initial the embedding as a dict
+    for node in list(NG.nodes()):
+        embedding[node]=[]
+    for r in range(K):
+        #for i,j in NG.edges():
+        #    print(i+" "+j+" "+str(NG[i][j]['weight']))
+        node_a = choice(list(NG.nodes()))
+        node_b = node_a
+        # Find the farthest nodes a, b
+        for t in range(C):
+            length_o = nx.single_source_dijkstra_path_length(NG, node_a)
+            length_i = nx.single_source_dijkstra_path_length(RG, node_a)
+            length = diff_length(length_o, length_i, embedding, node_a, r)
+            node_c = max(length.items(), key=operator.itemgetter(1))[0]
+            if node_c == node_b:
+                break
+            else:
+                node_b = node_a
+                node_a = node_c
+        length_oa = nx.single_source_dijkstra_path_length(NG, node_a)
+        length_ia = nx.single_source_dijkstra_path_length(RG, node_a)
+        length_a = diff_length(length_oa, length_ia, embedding, node_a, r)
+        length_ob = nx.single_source_dijkstra_path_length(NG, node_b)
+        length_ib = nx.single_source_dijkstra_path_length(RG, node_b)
+        length_b = diff_length(length_ob, length_ib, embedding, node_b, r)
+        dis_ab = length_a[node_b]
+        if dis_ab < epsilon:
+            break
+        # Calcute the embedding
+        for node in list(NG.nodes()):
+            p_ir = float(length_a[node]+dis_ab-length_b[node])/2
+            embedding[node].append(p_ir)
+    return embedding
+
+def difastmap_combine_L2(G, K, epsilon):
+    NG = G.copy()
+    RG = nx.reverse(NG)
+    embedding = {}
+    # initial the embedding as a dict
+    for node in list(NG.nodes()):
+        embedding[node]=[]
+    for r in range(K):
+        #for i,j in NG.edges():
+        #    print(i+" "+j+" "+str(NG[i][j]['weight']))
+        node_a = choice(list(NG.nodes()))
+        node_b = node_a
+        # Find the farthest nodes a, b
+        for t in range(C):
+            length_o = nx.single_source_dijkstra_path_length(NG, node_a)
+            length_i = nx.single_source_dijkstra_path_length(RG, node_a)
+            length = combine_length(length_o, length_i, embedding, node_a, r, 'L2')
+            node_c = max(length.items(), key=operator.itemgetter(1))[0]
+            if node_c == node_b:
+                break
+            else:
+                node_b = node_a
+                node_a = node_c
+        length_oa = nx.single_source_dijkstra_path_length(NG, node_a)
+        length_ia = nx.single_source_dijkstra_path_length(RG, node_a)
+        length_a = combine_length(length_oa, length_ia, embedding, node_a, r, 'L2')
+        length_ob = nx.single_source_dijkstra_path_length(NG, node_b)
+        length_ib = nx.single_source_dijkstra_path_length(RG, node_b)
+        length_b = combine_length(length_ob, length_ib, embedding, node_b, r, 'L2')
+        dis_ab = length_a[node_b]
+        if dis_ab < epsilon:
+            break
+        # Calcute the embedding
+        for node in list(NG.nodes()):
+            p_ir = float(length_a[node]+dis_ab-length_b[node])/(2*math.sqrt(dis_ab))
+            embedding[node].append(p_ir)
+    return embedding
+
+def difastmap_diff_L2(G, K, epsilon):
+    NG = G.copy()
+    RG = nx.reverse(NG)
+    embedding = {}
+    # initial the embedding as a dict
+    for node in list(NG.nodes()):
+        embedding[node]=[]
+    for r in range(K):
+        #for i,j in NG.edges():
+        #    print(i+" "+j+" "+str(NG[i][j]['weight']))
+        node_a = choice(list(NG.nodes()))
+        node_b = node_a
+        # Find the farthest nodes a, b
+        for t in range(C):
+            length_o = nx.single_source_dijkstra_path_length(NG, node_a)
+            length_i = nx.single_source_dijkstra_path_length(RG, node_a)
+            length = diff_length(length_o, length_i, embedding, node_a, r, 'L2')
+            node_c = max(length.items(), key=operator.itemgetter(1))[0]
+            if node_c == node_b:
+                break
+            else:
+                node_b = node_a
+                node_a = node_c
+        length_oa = nx.single_source_dijkstra_path_length(NG, node_a)
+        length_ia = nx.single_source_dijkstra_path_length(RG, node_a)
+        length_a = diff_length(length_oa, length_ia, embedding, node_a, r, 'L2')
+        length_ob = nx.single_source_dijkstra_path_length(NG, node_b)
+        length_ib = nx.single_source_dijkstra_path_length(RG, node_b)
+        length_b = diff_length(length_ob, length_ib, embedding, node_b, r, 'L2')
+        dis_ab = length_a[node_b]
+        if dis_ab < epsilon:
+            break
+        # Calcute the embedding
+        for node in list(NG.nodes()):
+            p_ir = float(length_a[node]+dis_ab-length_b[node])/(2*math.sqrt(dis_ab))
+            embedding[node].append(p_ir)
+    return embedding
+
 if __name__ == "__main__":
     infile = "../test/directed_4_4"
     G = readgraph(infile)
-    embedding = difastmap(G, 3, 0.01)
-    print(embedding)
-    distortion = nrmsd(G, embedding, 4, 'L1')
+    embedding_comb = difastmap_combine(G, 3, 0.01)
+    embedding_diff = difastmap_diff(G, 3, 0.01)
+    print("combine:" + str(embedding_comb))
+    print("difference:" + str(embedding_diff))
+    distortion = dinrmsd(G, embedding_comb, embedding_diff, 4, 'L1')
     print('distortion:' + str(distortion))
     nodes_label={}
-    for k in embedding.keys():
-        nodes_label[k]=str(k)+'\n'+str(embedding[k])
+    for k in embedding_comb.keys():
+        nodes_label[k]=str(k)+'\n'+str(embedding_comb[k])+'\n'+str(embedding_diff[k])
     pos = nx.spring_layout(G)
     nx.draw_networkx_nodes(G, pos, node_size=300)
     nx.draw_networkx_edges(G, pos, width=1)
