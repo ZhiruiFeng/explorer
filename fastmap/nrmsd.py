@@ -21,7 +21,7 @@ def nrmsd(G, embedding, S, alg = 'L1'):
             if alg == 'L1':
                 embdis = np.sum(np.abs(emb_1-emb_2))
             elif alg == 'L2':
-                embdis = np.dot(emb_1-emb_2, emb_1-emb_2)
+                embdis = math.sqrt(np.dot(emb_1-emb_2, emb_1-emb_2))
             sigma += (distance-embdis)*(distance-embdis)
             ave_d += distance
     base = S*(S-1)/2
