@@ -1,6 +1,8 @@
 import networkx as nx
 import operator
 from random import choice
+import matplotlib.pyplot as plt
+from nrmsd import nrmsd
 
 C = 3
 
@@ -14,8 +16,8 @@ def readgraph(infile):
             l = f.readline()
     return G
 
-def combine_length(G, length_o, length_i):
-    nodes = list(G.nodes())
+def combine_length(length_o, length_i, embedding, the_node, r):
+    nodes = list(embedding.keys())
     length = {}
     for node in nodes:
         if node in length_o:
@@ -29,6 +31,10 @@ def combine_length(G, length_o, length_i):
             print("Not a strongly connected graph.")
             exit
         length[node] = float(li + lo)/2
+        i = 0
+        while i < r:
+            length[node] -= abs(embedding[node][i]-embedding[the_node][i])
+            i = i+1
     return length
 
 def difastmap(G, K, epsilon):
@@ -39,15 +45,15 @@ def difastmap(G, K, epsilon):
     for node in list(NG.nodes()):
         embedding[node]=[]
     for r in range(K):
-        for i,j in NG.edges():
-            print(i+" "+j+" "+str(NG[i][j]['weight']))
+        #for i,j in NG.edges():
+        #    print(i+" "+j+" "+str(NG[i][j]['weight']))
         node_a = choice(list(NG.nodes()))
         node_b = node_a
         # Find the farthest nodes a, b
         for t in range(C):
             length_o = nx.single_source_dijkstra_path_length(NG, node_a)
             length_i = nx.single_source_dijkstra_path_length(RG, node_a)
-            length = combine_length(NG, length_o, length_i)
+            length = combine_length(length_o, length_i, embedding, node_a, r)
             node_c = max(length.items(), key=operator.itemgetter(1))[0]
             if node_c == node_b:
                 break
@@ -56,10 +62,10 @@ def difastmap(G, K, epsilon):
                 node_a = node_c
         length_oa = nx.single_source_dijkstra_path_length(NG, node_a)
         length_ia = nx.single_source_dijkstra_path_length(RG, node_a)
-        length_a = combine_length(NG, length_oa, length_ia)
+        length_a = combine_length(length_oa, length_ia, embedding, node_a, r)
         length_ob = nx.single_source_dijkstra_path_length(NG, node_b)
         length_ib = nx.single_source_dijkstra_path_length(RG, node_b)
-        length_b = combine_length(NG, length_ob, length_ib)
+        length_b = combine_length(length_ob, length_ib, embedding, node_b, r)
         dis_ab = length_a[node_b]
         if dis_ab < epsilon:
             break
@@ -67,12 +73,6 @@ def difastmap(G, K, epsilon):
         for node in list(NG.nodes()):
             p_ir = float(length_a[node]+dis_ab-length_b[node])/2
             embedding[node].append(p_ir)
-        # Update the weight of the graph
-        for i, j in NG.edges():
-            w = NG[i][j]['weight']
-            NG[i][j]['weight'] = w - abs(embedding[i][r]-embedding[j][r])
-            if NG[i][j]['weight'] < 0:
-                NG[i][j]['weight'] = 0
     return embedding
 
 if __name__ == "__main__":
@@ -80,3 +80,15 @@ if __name__ == "__main__":
     G = readgraph(infile)
     embedding = difastmap(G, 3, 0.01)
     print(embedding)
+    distortion = nrmsd(G, embedding, 4, 'L1')
+    print('distortion:' + str(distortion))
+    nodes_label={}
+    for k in embedding.keys():
+        nodes_label[k]=str(k)+'\n'+str(embedding[k])
+    pos = nx.spring_layout(G)
+    nx.draw_networkx_nodes(G, pos, node_size=300)
+    nx.draw_networkx_edges(G, pos, width=1)
+    nx.draw_networkx_edge_labels(G, pos, width=1, edge_labels=nx.get_edge_attributes(G,'weight'))
+    nx.draw_networkx_labels(G, pos, labels=nodes_label,font_size=6, font_family='sans-serif')
+    plt.axis('off')
+    plt.show()
