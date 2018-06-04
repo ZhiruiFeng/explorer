@@ -2,6 +2,7 @@ import networkx as nx
 import numpy as np
 import math
 from random import sample
+import sys
 
 def nrmsd(G, embedding, S, alg = 'L1'):
     if S<=1:
@@ -75,30 +76,29 @@ def compare_DiEdge(pivots, pivots_dis_i, pivots_dis_j, maxdis, mindis):
         state, dis = 4, maxdis
     return state, cmp, dis
 
-def dinrmsd(G, embedding_comb, embedding_diff, dis_store, S, alg = 'L1'):
+def dinrmsd(G, embedding_aver, embedding_diff, dis_store, S, alg = 'L1'):
     if S<=1:
         print("S should bigger than 1")
         exit
     subset = sample(list(G.nodes()), S)
-    sigma = 0
+    real_sigma = 0
+    pred_sigma = 0
+    tune_sigma = 0
     ave_d = 0
-    cnt_bigger = [0,0,0,0,0]
-    cnt_even = [0,0,0,0,0]
-    cnt_smaller = [0,0,0,0,0]
-    p_bigger = [0,0,0]
-    p_even = [0,0,0]
-    p_smaller = [0,0,0]
-    span = S/50
+    cnt_right = 0
+    span = S/100
     for i in range(S):
         if i%span == 0:
-            print(i/span)
+            sys.stdout.write("\rAnalysis Process: {}%".format(i/span))
         node_1 = subset[i]
-        embcomb_1 = np.array(embedding_comb[node_1])
+        embcomb_1 = np.array(embedding_aver[node_1])
         embdiff_1 = np.array(embedding_diff[node_1])
         length = nx.single_source_dijkstra_path_length(G, node_1)
         for j in range(S):
             node_2 = subset[j]
-            embcomb_2 = np.array(embedding_comb[node_2])
+            if node_1 == node_2:
+                continue
+            embcomb_2 = np.array(embedding_aver[node_2])
             embdiff_2 = np.array(embedding_diff[node_2])
             distance = length[node_2]
             if alg == 'L1':
@@ -110,31 +110,35 @@ def dinrmsd(G, embedding_comb, embedding_diff, dis_store, S, alg = 'L1'):
             distance_reverse = nx.dijkstra_path_length(G, node_2, node_1)
             maxdis = embdis_comb + embdis_diff
             mindis = embdis_comb - embdis_diff
-            cmp_res, cmp_p, embdis = compare_DiEdge(dis_store['pivots'], dis_store[node_1], dis_store[node_2], maxdis, mindis)
+            cmp_res, cmp_p, tune_embdis = compare_DiEdge(dis_store['pivots'], dis_store[node_1], dis_store[node_2], maxdis, mindis)
             if distance > distance_reverse:
-                cnt_bigger[cmp_res] += 1
-                p_bigger[cmp_p] += 1
+                real_embdis = maxdis
+                if cmp_p == 0:
+                    cnt_right += 1
             elif distance == distance_reverse:
-                cnt_even[cmp_res] += 1
-                p_even[cmp_p] += 1
+                real_embdis = embdis_comb
+                cnt_right += 1
             else:
-                cnt_smaller[cmp_res] += 1
-                p_smaller[cmp_p] += 1
-            #if cmp_p <1:
-            #    embdis = maxdis
-            #else:
-            #    embdis = mindis
-            sigma += (distance-embdis)*(distance-embdis)
+                real_embdis = mindis
+                if cmp_p == 2:
+                    cnt_right += 1
+            if cmp_p == 0:
+                pred_embdis = maxdis
+            elif cmp_p == 1:
+                pred_embdis = embdis_comb
+            else:
+                pred_embdis = mindis
+            real_sigma += (distance-real_embdis)*(distance-real_embdis)
+            pred_sigma += (distance-pred_embdis)*(distance-pred_embdis)
+            tune_sigma += (distance-tune_embdis)*(distance-tune_embdis)
             ave_d += distance
-    base = S*S
-    sigma = math.sqrt(float(sigma)/base)
+    base = S*(S-1)
+    real_sigma = math.sqrt(float(real_sigma)/base)
+    pred_sigma = math.sqrt(float(pred_sigma)/base)
+    tune_sigma = math.sqrt(float(tune_sigma)/base)
     ave_d = float(ave_d)/base
-    print("######### Compare matrix:")
-    print(cnt_bigger)
-    print(cnt_even)
-    print(cnt_smaller)
-    print("######### Pivot Compare matrix:")
-    print(p_bigger)
-    print(p_even)
-    print(p_smaller)
-    return float(sigma)/ave_d
+    precision = float(cnt_right)/base
+    distorsion_real = float(real_sigma)/ave_d
+    distorsion_pred = float(pred_sigma)/ave_d
+    distorsion_tune = float(tune_sigma)/ave_d
+    return precision, distorsion_real, distorsion_pred, distorsion_tune

@@ -72,7 +72,7 @@ def store_distances(G, dis_store, pnode, length_o, length_i):
             dis_store[node][pnode] = length_i[node]
             dis_store[node]['-'+str(pnode)] = length_o[node]
 
-def difastmap_combine(G, K, epsilon, dis_store, alg='L1'):
+def difastmap_average(G, K, epsilon, dis_store, alg='L1'):
     NG = G.copy()
     RG = nx.reverse(NG)
     embedding = {}
@@ -158,14 +158,18 @@ def difastmap_diff(G, K, epsilon, dis_store, alg='L1'):
             embedding[node].append(p_ir)
     return embedding
 
-if __name__ == "__main__":
-    infile = "../test/p2p-Gnutella08_2068_9313"
-    G = readDiGraph(infile)
+def init_dis_store(G):
     dis_store = {}
     dis_store['pivots'] = set()
     for node in G.nodes():
         dis_store[node] = {}
-    embedding_comb = difastmap_combine(G, 30, 0.01, dis_store, 'L2')
+    return dis_store
+
+if __name__ == "__main__":
+    infile = "../test/p2p-Gnutella08_2068_9313"
+    G = readDiGraph(infile)
+    dis_store = init_dis_store()
+    embedding_comb = difastmap_average(G, 30, 0.01, dis_store, 'L2')
     embedding_diff = difastmap_diff(G, 30, 0.01, dis_store, 'L2')
     #print("combine:" + str(embedding_comb))
     #print("difference:" + str(embedding_diff))
