@@ -2,8 +2,8 @@ import networkx as nx
 import operator
 from random import choice
 import matplotlib.pyplot as plt
-from nrmsd import nrmsd, dinrmsd
-from utils import readDiGraph
+from fastmap.analyse import nrmsd, dinrmsd
+from fastmap.utils import readDiGraph
 import math
 
 C = 10
@@ -172,15 +172,3 @@ if __name__ == "__main__":
     print("finish embedding")
     distortion = dinrmsd(G, embedding_comb, embedding_diff,dis_store, 200, 'L2')
     print('distortion:' + str(distortion))
-    nodes_label={}
-    for k in embedding_comb.keys():
-        nodes_label[k]=str(k)+'\n'+str(embedding_comb[k])+'\n'+str(embedding_diff[k])
-    pos = nx.spring_layout(G)
-    #nx.draw_networkx_nodes(G, pos, node_size=300)
-    #nx.draw_networkx_edges(G, pos, width=1)
-    nx.draw_networkx_nodes(G, pos, node_size=2)
-    #nx.draw_networkx_edges(G, pos, width=1)
-    #nx.draw_networkx_edge_labels(G, pos, width=1, edge_labels=nx.get_edge_attributes(G,'weight'))
-    #nx.draw_networkx_labels(G, pos, labels=nodes_label,font_size=6, font_family='sans-serif')
-    plt.axis('off')
-    plt.show()

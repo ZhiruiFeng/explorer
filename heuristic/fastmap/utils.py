@@ -1,6 +1,7 @@
 ## Some functions for analyzing the property of graph
 import networkx as nx
 from random import choice
+import matplotlib.pyplot as plt
 
 def connectivity_info(G):
     if nx.is_strongly_connected(G):
@@ -56,6 +57,17 @@ def writeDiGraph(G, outfile):
             weight = 1.0
         outfile.write(str(node1)+" "+str(node2)+" "+str(weight)+"\n")
     outfile.close()
+
+def drawGraph(G):
+    pos = nx.spring_layout(G)
+    #nx.draw_networkx_nodes(G, pos, node_size=300)
+    #nx.draw_networkx_edges(G, pos, width=1)
+    nx.draw_networkx_nodes(G, pos, node_size=4)
+    nx.draw_networkx_edges(G, pos, width=1)
+    #nx.draw_networkx_edge_labels(G, pos, width=1, edge_labels=nx.get_edge_attributes(G,'weight'))
+    #nx.draw_networkx_labels(G, pos, labels=nodes_label,font_size=6, font_family='sans-serif')
+    plt.axis('off')
+    plt.show()
 
 if __name__ == "__main__":
     in_directory = "../test/raw/"
