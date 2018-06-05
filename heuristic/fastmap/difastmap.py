@@ -2,8 +2,6 @@ import networkx as nx
 import operator
 from random import choice
 import matplotlib.pyplot as plt
-from fastmap.analyse import nrmsd, dinrmsd
-from fastmap.utils import readDiGraph
 import math
 
 C = 10
@@ -164,15 +162,3 @@ def init_dis_store(G):
     for node in G.nodes():
         dis_store[node] = {}
     return dis_store
-
-if __name__ == "__main__":
-    infile = "../test/p2p-Gnutella08_2068_9313"
-    G = readDiGraph(infile)
-    dis_store = init_dis_store()
-    embedding_comb = difastmap_average(G, 30, 0.01, dis_store, 'L2')
-    embedding_diff = difastmap_diff(G, 30, 0.01, dis_store, 'L2')
-    #print("combine:" + str(embedding_comb))
-    #print("difference:" + str(embedding_diff))
-    print("finish embedding")
-    distortion = dinrmsd(G, embedding_comb, embedding_diff,dis_store, 200, 'L2')
-    print('distortion:' + str(distortion))

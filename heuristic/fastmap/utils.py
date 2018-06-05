@@ -1,5 +1,6 @@
 ## Some functions for analyzing the property of graph
 import networkx as nx
+import random
 from random import choice
 import matplotlib.pyplot as plt
 
@@ -67,6 +68,38 @@ def drawGraph(G):
     #nx.draw_networkx_edge_labels(G, pos, width=1, edge_labels=nx.get_edge_attributes(G,'weight'))
     #nx.draw_networkx_labels(G, pos, labels=nodes_label,font_size=6, font_family='sans-serif')
     plt.axis('off')
+    plt.show()
+
+def generate_random_digraph(n, p, low, high):
+    for i in range(100):
+        G = nx.gnp_random_graph(n, p, directed = True)
+        if nx.is_strongly_connected(G):
+            break
+    if nx.is_strongly_connected(G) == False:
+        print("Unable to generate strongly connected graph, try increase 'p'.")
+    density = float(len(G.edges()))/(n*(n-1))
+    print("Density: {}".format(density))
+    for (n1, n2) in G.edges():
+        G[n1][n2]['weight']=random.randint(low, high)
+    return G, density
+
+def distance_info(G):
+    dis = []
+    for node in list(G.nodes()):
+        length = nx.single_source_dijkstra_path_length(G, node)
+        dis.extend(list(length.values()))
+    x = list(set(dis))
+    y = []
+    for i in x:
+        y.append(dis.count(i))
+    y[0]=0
+    s = sum(y)
+    for i in range(len(y)):
+        y[i] = float(y[i])/s
+    plt.plot(x,y,'r-o', linewidth=1)
+    plt.xlabel('distance')
+    plt.ylabel('count (persents)')
+    plt.title('Statistic of pair distances')
     plt.show()
 
 if __name__ == "__main__":
