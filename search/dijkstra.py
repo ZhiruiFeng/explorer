@@ -1,7 +1,7 @@
-import networkx
+import graph
 from myqueue import PriorityQueue
 
-def astar(G, start, goal):
+def dijkstra(graph, start, goal):
     frontier = PriorityQueue()
     frontier.put(start, 0)
     graph.set_labeled(start)
@@ -19,7 +19,7 @@ def astar(G, start, goal):
             new_cost = cost_so_far[current] + graph.get_weight(current, next_node)
             if next_node not in cost_so_far or new_cost < cost_so_far[next_node]:
                 cost_so_far[next_node] = new_cost
-                priority = new_cost + graph.get_heuristic(next_node, goal)
+                priority = new_cost
                 frontier.put(next_node, priority)
                 came_from[next] = current
                 graph.set_labeled(next_node)
