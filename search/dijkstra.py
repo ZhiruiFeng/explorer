@@ -27,5 +27,7 @@ def dijkstra(graph, start, goal):
                 came_from[next_node] = current
                 graph.set_labeled(next_node)
         graph.set_scanned(current)
+    if current != goal:
+        return [], float("INF")
     path = reconstruct_path(came_from, start, goal)
     return path, cost_so_far[goal]

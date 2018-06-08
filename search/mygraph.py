@@ -49,7 +49,13 @@ class SimpleGraph:
     def get_networkx_graph(self):
         return self.graph
 
+    def mark_start_goal(self, start, goal):
+        self.graph.nodes[start]['state'] = 'start'
+        self.graph.nodes[goal]['state'] = 'goal'
+
     def mark_path(self, path):
+        if len(path) == 0:
+            return
         start = path[0]
         self.graph.nodes[start]['state'] = 'start'
         goal = path[-1]
@@ -99,7 +105,7 @@ class GridGraph(SimpleGraph):
                 nodeid = (i,j)
                 sys.stdout.write(self.graph.nodes[nodeid]['terrain'])
 
-    def print_exploration(self, path):
+    def print_exploration(self):
         for i in range(self.height):
             sys.stdout.write('\n')
             for j in range(self.width):

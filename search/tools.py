@@ -1,4 +1,6 @@
 def reconstruct_path(came_from, start, goal):
+    if goal not in came_from:
+        return []
     current = goal
     path = []
     while current != start:
