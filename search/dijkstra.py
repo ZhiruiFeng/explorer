@@ -1,5 +1,8 @@
-import graph
-from myqueue import PriorityQueue
+import os, sys
+lib_path = os.path.abspath(os.path.join('../'))
+sys.path.append(lib_path)
+from search.myqueue import PriorityQueue
+from search.tools import reconstruct_path
 
 def dijkstra(graph, start, goal):
     frontier = PriorityQueue()
@@ -21,7 +24,8 @@ def dijkstra(graph, start, goal):
                 cost_so_far[next_node] = new_cost
                 priority = new_cost
                 frontier.put(next_node, priority)
-                came_from[next] = current
+                came_from[next_node] = current
                 graph.set_labeled(next_node)
         graph.set_scanned(current)
-    return came_from, cost_so_far
+    path = reconstruct_path(came_from, start, goal)
+    return path, cost_so_far[goal]
