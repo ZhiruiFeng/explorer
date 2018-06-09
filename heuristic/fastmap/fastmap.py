@@ -4,17 +4,7 @@ from random import choice
 
 C = 3
 
-def readgraph(infile):
-    G = nx.Graph()
-    with open(infile) as f:
-        l = f.readline()
-        while l:
-            node1, node2, weight = l.strip().split()
-            G.add_edge(node1, node2, weight=float(weight))
-            l = f.readline()
-    return G
-
-def difastmap(G, K, epsilon):
+def fastmap_L1(G, K, epsilon):
     NG = G.copy()
     embedding = {}
     # initial the embedding as a dict
@@ -47,9 +37,5 @@ def difastmap(G, K, epsilon):
             NG[i][j]['weight'] = w - abs(embedding[i][r]-embedding[j][r])
     return embedding
 
-if __name__ == "__main__":
-    infile = "../test/undirected_4_4"
-    G = readgraph(infile)
-    print(G.nodes())
-    embedding = fastmap(G, 3, 0.01)
-    print(embedding)
+def fastmap_L2(G, K, epsilon):
+    pass

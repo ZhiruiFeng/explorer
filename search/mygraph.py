@@ -5,6 +5,7 @@ sys.path.append(lib_path)
 import networkx as nx
 from heuristic.fastmap import difastmap
 import math
+import numpy as np
 
 class SimpleGraph:
     def __init__(self, G):
@@ -63,6 +64,10 @@ class SimpleGraph:
         for nodeid in path[1:-1]:
             self.graph.nodes[nodeid]['state'] = 'path'
 
+    def setembedding(self, embedding):
+        for nodeid in embedding:
+            self.graph.nodes[nodeid]['embedding'] = embedding[nodeid]
+
 class GridGraph(SimpleGraph):
     def __init__(self, Grid):
         # input G is the grid type in env.grid
@@ -95,7 +100,14 @@ class GridGraph(SimpleGraph):
             heuristic = abs(i1-i2)+abs(j1-j2)
         elif alg == 'Straight':
             heuristic = math.sqrt((i1-i2)**2 + (j1-j2)**2)
-
+        elif alg == 'FastMap_L1':
+            emb_node1 = np.array(self.graph.nodes[node1]['embedding'])
+            emb_node2 = np.array(self.graph.nodes[node2]['embedding'])
+            heuristic = np.sum(np.abs(emb_node1-emb_node2))
+        elif alg == 'FastMap_L2':
+            emb_node1 = np.array(self.graph.nodes[node1]['embedding'])
+            emb_node2 = np.array(self.graph.nodes[node2]['embedding'])
+            heuristic = math.sqrt(np.dot(emb_node1-emb_node2, emb_node1-emb_node2))
         return heuristic
 
     def print_terrain(self):

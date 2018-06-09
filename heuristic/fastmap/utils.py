@@ -47,6 +47,24 @@ def readDiGraph(infile):
             l = f.readline()
     return G
 
+def readgraph(infile):
+    G = nx.Graph()
+    with open(infile) as f:
+        l = f.readline()
+        while l:
+            if l[0] == '#':
+                l = f.readline()
+                continue
+            items = l.strip().split()
+            if len(items) == 3:
+                node1, node2, weight = items
+            elif len(items) == 2:
+                node1, node2 = items
+                weight = 1.0
+            G.add_edge(node1, node2, weight=float(weight))
+            l = f.readline()
+    return G
+
 def writeDiGraph(G, outfile):
     outfile = open(outfile, 'w')
     print("Start writing into file {}".format(outfile))
