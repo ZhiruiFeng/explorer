@@ -21,9 +21,36 @@ def combine_length(length_o, length_i, embedding, the_node, r, alg='L1'):
             print("[combine_length]:Not a strongly connected graph.")
             exit
         if alg == 'L1':
-            length[node] = float(li + lo)/2
+            length[node] = (float(li) + float(lo))/2
         elif alg == 'L2':
-            length[node] = (float(li + lo)/2)**2
+            length[node] = (float(li) + float(lo))/2)**2
+        i = 0
+        while i < r:
+            if alg == 'L1':
+                length[node] -= abs(embedding[node][i]-embedding[the_node][i])
+            elif alg == 'L2':
+                length[node] -= (embedding[node][i]-embedding[the_node][i])**2
+            i = i+1
+    return length
+
+def max_length(length_o, length_i, embedding, the_node, r, alg='L1'):
+    nodes = list(embedding.keys())
+    length = {}
+    for node in nodes:
+        if node in length_o:
+            lo = length_o[node]
+        else:
+            print("[combine_length]:Not a strongly connected graph.")
+            exit
+        if node in length_i:
+            li = length_i[node]
+        else:
+            print("[combine_length]:Not a strongly connected graph.")
+            exit
+        if alg == 'L1':
+            length[node] = float(max(li, lo))
+        elif alg == 'L2':
+            length[node] = float(max(li, lo))**2
         i = 0
         while i < r:
             if alg == 'L1':
@@ -78,8 +105,6 @@ def difastmap_average(G, K, epsilon, dis_store, alg='L1'):
     for node in list(NG.nodes()):
         embedding[node]=[]
     for r in range(K):
-        #for i,j in NG.edges():
-        #    print(i+" "+j+" "+str(NG[i][j]['weight']))
         node_a = choice(list(NG.nodes()))
         node_b = node_a
         # Find the farthest nodes a, b
@@ -112,6 +137,48 @@ def difastmap_average(G, K, epsilon, dis_store, alg='L1'):
                 p_ir = float(length_a[node]+dis_ab-length_b[node])/(2*math.sqrt(dis_ab))
             embedding[node].append(p_ir)
     return embedding
+
+def difastmap_max(G, K, epsilon, dis_store, alg='L1'):
+    NG = G.copy()
+    RG = nx.reverse(NG)
+    embedding = {}
+    # initial the embedding as a dict
+    for node in list(NG.nodes()):
+        embedding[node]=[]
+    for r in range(K):
+        node_a = choice(list(NG.nodes()))
+        node_b = node_a
+        # Find the farthest nodes a, b
+        for t in range(C):
+            length_o = nx.single_source_dijkstra_path_length(NG, node_a)
+            length_i = nx.single_source_dijkstra_path_length(RG, node_a)
+            length = max_length(length_o, length_i, embedding, node_a, r, alg)
+            node_c = max(length.items(), key=operator.itemgetter(1))[0]
+            if node_c == node_b:
+                break
+            else:
+                node_b = node_a
+                node_a = node_c
+        length_oa = nx.single_source_dijkstra_path_length(NG, node_a)
+        length_ia = nx.single_source_dijkstra_path_length(RG, node_a)
+        length_a = max_length(length_oa, length_ia, embedding, node_a, r, alg)
+        store_distances(G, dis_store, node_a, length_oa, length_ia)
+        length_ob = nx.single_source_dijkstra_path_length(NG, node_b)
+        length_ib = nx.single_source_dijkstra_path_length(RG, node_b)
+        length_b = max_length(length_ob, length_ib, embedding, node_b, r, alg)
+        store_distances(G, dis_store, node_b, length_ob, length_ib)
+        dis_ab = length_a[node_b]
+        if dis_ab < epsilon:
+            break
+        # Calcute the embedding
+        for node in list(NG.nodes()):
+            if alg == 'L1':
+                p_ir = float(length_a[node]+dis_ab-length_b[node])/2
+            elif alg == 'L2':
+                p_ir = float(length_a[node]+dis_ab-length_b[node])/(2*math.sqrt(dis_ab))
+            embedding[node].append(p_ir)
+    return embedding
+
 
 def difastmap_diff(G, K, epsilon, dis_store, alg='L1'):
     NG = G.copy()

@@ -195,10 +195,6 @@ def meta_calculation(node_1):
     return [real_sigma, pred_sigma, tune_sigma, ave_d, cnt_right]
 
 def dinrmsd_mp(G, embedding_aver, embedding_diff, dis_store, subset, alg = 'L1'):
-    #if S<=1:
-    #    print("S should bigger than 1")
-    #    exit
-    #subset = sample(list(G.nodes()), S)
     input_set = list(subset)
     real_sigma = 0
     pred_sigma = 0
@@ -224,3 +220,40 @@ def dinrmsd_mp(G, embedding_aver, embedding_diff, dis_store, subset, alg = 'L1')
     distorsion_pred = float(pred_sigma)/ave_d
     distorsion_tune = float(tune_sigma)/ave_d
     return precision, distorsion_real, distorsion_pred, distorsion_tune
+
+def distortion(G, embedding, S, alg='L1', variant='undirected'):
+    if S<=1:
+        print("S should bigger than 1")
+        exit
+    subset = sample(list(G.nodes()), S)
+    sigma = 0
+    ave_d = 0
+    span = S/100
+    for i in range(S):
+        if i%span == 0:
+            sys.stdout.write("\rAnalysis Process: {}%".format(i/span))
+        node_1 = subset[i]
+        emb_1 = np.array(embedding[node_1])
+        length = nx.single_source_dijkstra_path_length(G, node_1)
+        for j in range(i+1, S):
+            node_2 = subset[j]
+            emb_2 = np.array(embedding[node_2])
+            distance = length[node_2]
+            if variant == 'undirected':
+                target_dis = distance
+            elif variant == 'average':
+                distance_reverse = nx.dijkstra_path_length(G, node_2, node_1)
+                target_dis = (float(distance) + float(distance_reverse))/2
+            elif variant == 'max':
+                distance_reverse = nx.dijkstra_path_length(G, node_2, node_1)
+                target_dis = max(float(distance), float(distance_reverse))
+            if alg == 'L1':
+                embdis = np.sum(np.abs(emb_1-emb_2))
+            elif alg == 'L2':
+                embdis = math.sqrt(np.dot(emb_1-emb_2, emb_1-emb_2))
+            sigma += (target_dis-embdis)*(target_dis-embdis)
+            ave_d += target_dis
+    base = float(S)*float(S-1)/2
+    sigma = math.sqrt(float(sigma)/base)
+    ave_d = float(ave_d)/base
+    return float(sigma)/ave_d
