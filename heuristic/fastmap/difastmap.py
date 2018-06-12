@@ -23,7 +23,7 @@ def combine_length(length_o, length_i, embedding, the_node, r, alg='L1'):
         if alg == 'L1':
             length[node] = (float(li) + float(lo))/2
         elif alg == 'L2':
-            length[node] = (float(li) + float(lo))/2)**2
+            length[node] = ((float(li) + float(lo))/2)**2
         i = 0
         while i < r:
             if alg == 'L1':

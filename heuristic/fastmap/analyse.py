@@ -247,6 +247,9 @@ def distortion(G, embedding, S, alg='L1', variant='undirected'):
             elif variant == 'max':
                 distance_reverse = nx.dijkstra_path_length(G, node_2, node_1)
                 target_dis = max(float(distance), float(distance_reverse))
+            elif variant == 'diff':
+                distance_reverse = nx.dijkstra_path_length(G, node_2, node_1)
+                target_dis = abs(float(distance) - float(distance_reverse))/2
             if alg == 'L1':
                 embdis = np.sum(np.abs(emb_1-emb_2))
             elif alg == 'L2':
