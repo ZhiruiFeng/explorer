@@ -43,6 +43,9 @@ def readDiGraph(infile):
             elif len(items) == 2:
                 node1, node2 = items
                 weight = 1.0
+            else:
+                l = f.readline()
+                continue
             G.add_edge(node1, node2, weight=float(weight))
             l = f.readline()
     return G
@@ -61,6 +64,9 @@ def readgraph(infile):
             elif len(items) == 2:
                 node1, node2 = items
                 weight = 1.0
+            else:
+                l = f.readline()
+                continue
             G.add_edge(node1, node2, weight=float(weight))
             l = f.readline()
     return G
