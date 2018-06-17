@@ -6,3 +6,5 @@
 
 # Ignore the checkpoints
 *.ipynb_checkpoints
+
+Private*
