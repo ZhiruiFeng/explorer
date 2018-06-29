@@ -29,6 +29,22 @@ def largest_strongly_conencted_component(G):
         print("Edges: {}".format(num_edges))
         return(Component)
 
+def largest_connected_component_undirected(G):
+    if nx.is_connected(G):
+        print("A connected graph.")
+        return(G)
+    else:
+        num = nx.number_connected_components(G)
+        print("Not a connected graph, have {} components".format(num))
+        largest = max(nx.connected_components(G), key=len)
+        Component = G.subgraph(largest)
+        num_nodes = len(Component.nodes())
+        num_edges = len(Component.edges())
+        print("The largest components:")
+        print("Nodes: {}".format(num_nodes))
+        print("Edges: {}".format(num_edges))
+        return(Component)
+
 def readDiGraph(infile):
     G = nx.DiGraph()
     with open(infile) as f:

@@ -4,6 +4,7 @@ sys.path.append(lib_path)
 
 import networkx as nx
 from heuristic.fastmap import difastmap
+from heuristic.fastmap import utils
 import math
 import numpy as np
 
@@ -75,6 +76,7 @@ class GridGraph(SimpleGraph):
         self.graph = Grid.get_networkx_graph()
         self.height, self.width = Grid.get_size()
         self.reset()
+        self.largest_connected_component = self._get_largest_connected_components()
 
     def is_legal_goal(self, start, goal):
         if not start in self.graph.nodes:
@@ -132,6 +134,22 @@ class GridGraph(SimpleGraph):
                     sys.stdout.write('+')
                 else:
                     sys.stdout.write('~')
+
+    def _get_largest_connected_components(self):
+        return utils.largest_connected_component_undirected(self.graph)
+
+    def print_largest_connected_component(self):
+        for i in range(self.height):
+            sys.stdout.write('\n')
+            for j in range(self.width):
+                nodeid = (i,j)
+                if nodeid in self.largest_connected_component.nodes:
+                    sys.stdout.write(self.largest_connected_component.nodes[nodeid]['terrain'])
+                else:
+                    sys.stdout.write(" ")
+
+    def get_largest_connected_component(self):
+        return self.largest_connected_component
 
 class DirectedGraph(SimpleGraph):
     def get_heuristic(self, node1, node2):
