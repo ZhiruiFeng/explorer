@@ -3,7 +3,7 @@ import operator
 from random import choice
 import math
 
-C = 3
+C = 10
 
 def fastmap_L1(G, K, epsilon):
     NG = G.copy()
